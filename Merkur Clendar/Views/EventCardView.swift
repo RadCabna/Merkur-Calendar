@@ -2,6 +2,7 @@ import SwiftUI
 
 struct EventCardView: View {
     let event: AppEvent
+    @Environment(EventsStore.self) private var eventsStore
 
     private var cornerRadius: CGFloat { screenHeight * 0.022 }
     private var cardHeight: CGFloat { screenHeight * 0.21 }
@@ -131,17 +132,31 @@ struct EventCardView: View {
 
                 Spacer(minLength: 4)
 
-                Button {} label: {
+                let registered = eventsStore.isRegistered(event.id)
+                Button { eventsStore.toggleRegistration(for: event.id) } label: {
                     HStack(spacing: 4) {
-                        Text("REGISTER")
-                        Text("-->")
+                        if registered {
+                            Image(systemName: "clock")
+                                .font(.system(size: screenHeight * 0.016, weight: .semibold))
+                            Text("WAITING LIST")
+                        } else {
+                            Text("REGISTER")
+                            Text("-->")
+                        }
                     }
-                    .font(.poppinsSemiBold(size: screenHeight * 0.018))
-                    .foregroundStyle(.black)
+                    .font(.poppinsSemiBold(size: screenHeight * 0.016))
+                    .foregroundStyle(registered ? Color("gold") : .black)
                     .padding(.horizontal, screenHeight * 0.014)
                     .frame(height: screenHeight * 0.042)
-                    .background(Color("gold"))
+                    .background(registered ? Color(red: 0.04, green: 0.07, blue: 0.18) : Color("gold"))
                     .clipShape(RoundedRectangle(cornerRadius: screenHeight * 0.012))
+                    .overlay {
+                        if registered {
+                            RoundedRectangle(cornerRadius: screenHeight * 0.012)
+                                .stroke(Color("gold"), lineWidth: 1.5)
+                        }
+                    }
+                    .animation(.easeInOut(duration: 0.2), value: registered)
                 }
                 .buttonStyle(.plain)
                 .fixedSize()

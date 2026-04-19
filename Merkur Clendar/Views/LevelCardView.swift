@@ -4,7 +4,7 @@ struct LevelCardView: View {
     let profile: UserProfile
 
     private var cornerRadius: CGFloat { screenHeight * 0.022 }
-    private var cardPadding: CGFloat { screenHeight * 0.022 }
+    private var cardPadding: CGFloat { screenHeight * 0.015 }
     private var iconSize: CGFloat { screenHeight * 0.1 }
     private var barHeight: CGFloat { screenHeight * 0.013 }
 
@@ -29,7 +29,7 @@ struct LevelCardView: View {
                     .scaledToFit()
                     .frame(width: iconSize, height: iconSize)
 
-                VStack(alignment: .leading, spacing: screenHeight * 0.005) {
+                VStack(alignment: .leading, spacing: screenHeight * 0.00) {
                     Text("YOUR LEVEL")
                         .font(.poppinsSemiBold(size: screenHeight * 0.014))
                         .foregroundStyle(Color("gold"))
@@ -65,7 +65,7 @@ struct LevelCardView: View {
                 }
             }
 
-            VStack(spacing: screenHeight * 0.009) {
+            VStack(spacing: screenHeight * 0.002) {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Capsule()

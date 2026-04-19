@@ -3,13 +3,16 @@ import SwiftUI
 @Observable
 final class EventsStore {
     var events: [AppEvent] = []
+    var registeredEventIDs: Set<UUID> = []
 
     private var storageKey: String
     private var seededKey: String
+    private var registeredKey: String
 
     init(username: String = "") {
-        storageKey = username.isEmpty ? "merkur_events" : "merkur_events_\(username)"
-        seededKey  = username.isEmpty ? "merkur_seeded" : "merkur_seeded_\(username)"
+        storageKey    = username.isEmpty ? "merkur_events"     : "merkur_events_\(username)"
+        seededKey     = username.isEmpty ? "merkur_seeded"     : "merkur_seeded_\(username)"
+        registeredKey = username.isEmpty ? "merkur_registered" : "merkur_registered_\(username)"
         load()
         if !UserDefaults.standard.bool(forKey: seededKey) {
             seedDefaultEvents()
@@ -23,7 +26,22 @@ final class EventsStore {
 
     func remove(id: UUID) {
         events.removeAll { $0.id == id }
+        registeredEventIDs.remove(id)
+        saveRegistered()
         save()
+    }
+
+    func toggleRegistration(for id: UUID) {
+        if registeredEventIDs.contains(id) {
+            registeredEventIDs.remove(id)
+        } else {
+            registeredEventIDs.insert(id)
+        }
+        saveRegistered()
+    }
+
+    func isRegistered(_ id: UUID) -> Bool {
+        registeredEventIDs.contains(id)
     }
 
     var nextEvent: AppEvent? {
@@ -39,12 +57,19 @@ final class EventsStore {
         UserDefaults.standard.set(data, forKey: storageKey)
     }
 
+    private func saveRegistered() {
+        let ids = registeredEventIDs.map { $0.uuidString }
+        UserDefaults.standard.set(ids, forKey: registeredKey)
+    }
+
     private func load() {
-        guard
-            let data = UserDefaults.standard.data(forKey: storageKey),
-            let decoded = try? JSONDecoder().decode([AppEvent].self, from: data)
-        else { return }
-        events = decoded
+        if let data = UserDefaults.standard.data(forKey: storageKey),
+           let decoded = try? JSONDecoder().decode([AppEvent].self, from: data) {
+            events = decoded
+        }
+        if let ids = UserDefaults.standard.stringArray(forKey: registeredKey) {
+            registeredEventIDs = Set(ids.compactMap { UUID(uuidString: $0) })
+        }
     }
 
     private func seedDefaultEvents() {
