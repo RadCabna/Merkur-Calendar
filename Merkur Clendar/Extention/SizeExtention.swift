@@ -1,8 +1,12 @@
-//
-//  SizeExtention.swift
-//  Merkur Clendar
-//
-//  Created by Алкександр Степанов on 17.04.2026.
-//
 
-import Foundation
+import SwiftUI
+
+extension View {
+    var screenHeight: CGFloat {
+        UIScreen.main.bounds.height
+    }
+
+    var screenWidth: CGFloat {
+        UIScreen.main.bounds.width
+    }
+}
