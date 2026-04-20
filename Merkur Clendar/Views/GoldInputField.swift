@@ -5,6 +5,8 @@ struct GoldInputField: View {
     @Binding var text: String
     var keyboardType: UIKeyboardType = .default
     var isError: Bool = false
+    var submitLabel: SubmitLabel = .done
+    var onSubmit: (() -> Void)? = nil
 
     private var cornerRadius: CGFloat { screenHeight * 0.029 }
     private var fieldHeight: CGFloat { screenHeight * 0.058 }
@@ -23,6 +25,8 @@ struct GoldInputField: View {
                 .foregroundStyle(Color("gold"))
                 .tint(Color("gold"))
                 .keyboardType(keyboardType)
+                .submitLabel(submitLabel)
+                .onSubmit { onSubmit?() }
                 .padding(.horizontal, screenHeight * 0.02)
         }
         .frame(height: fieldHeight)

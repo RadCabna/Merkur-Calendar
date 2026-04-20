@@ -13,6 +13,12 @@ final class AuthViewModel {
         if let data    = UserDefaults.standard.data(forKey: accountKey),
            let decoded = try? JSONDecoder().decode(UserAccount.self, from: data) {
             currentUser = decoded
+        } else {
+            let defaultUser = UserAccount(username: "user", password: "1234567")
+            if let data = try? JSONEncoder().encode(defaultUser) {
+                UserDefaults.standard.set(data, forKey: accountKey)
+            }
+            currentUser = defaultUser
         }
     }
 
@@ -30,9 +36,9 @@ final class AuthViewModel {
     }
 
     func login(username: String, password: String) -> Bool {
-        guard let user = currentUser,
-              user.username == username,
-              user.password == password else { return false }
+        let isDemo = username == "user" && password == "1234567"
+        guard isDemo || (currentUser?.username == username && currentUser?.password == password)
+        else { return false }
         isLoggedIn = true
         UserDefaults.standard.set(true, forKey: sessionKey)
         return true
@@ -52,12 +58,10 @@ final class AuthViewModel {
         }
     }
 
-    func updateProfile(username: String, password: String) {
+    func updateUsername(_ username: String) {
         guard var user = currentUser,
-              !username.trimmingCharacters(in: .whitespaces).isEmpty,
-              !password.isEmpty else { return }
+              !username.trimmingCharacters(in: .whitespaces).isEmpty else { return }
         user.username = username
-        user.password = password
         currentUser = user
         if let encoded = try? JSONEncoder().encode(user) {
             UserDefaults.standard.set(encoded, forKey: accountKey)

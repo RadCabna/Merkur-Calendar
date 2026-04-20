@@ -10,6 +10,9 @@ struct CreateEventView: View {
     private var cornerRadius: CGFloat { screenHeight * 0.029 }
     private var sectionSpacing: CGFloat { screenHeight * 0.022 }
 
+    private enum Field: Hashable { case name, location, prizePool, buyIn, maxPlayers, description }
+    @FocusState private var focus: Field?
+
     var body: some View {
         ZStack {
             Image("appBG")
@@ -22,7 +25,10 @@ struct CreateEventView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: sectionSpacing) {
                         GoldInputField(placeholder: "Event Name", text: $viewModel.eventName,
-                                       isError: viewModel.nameError)
+                                       isError: viewModel.nameError,
+                                       submitLabel: .next,
+                                       onSubmit: { focus = .location })
+                            .focused($focus, equals: .name)
 
                         HStack(spacing: screenHeight * 0.014) {
                             datePickerField(placeholder: "Date",
@@ -36,7 +42,10 @@ struct CreateEventView: View {
                         }
 
                         GoldInputField(placeholder: "Location", text: $viewModel.location,
-                                       isError: viewModel.locationError)
+                                       isError: viewModel.locationError,
+                                       submitLabel: .done,
+                                       onSubmit: { focus = nil })
+                            .focused($focus, equals: .location)
 
                         eventTypeSection
                             .overlay(alignment: .bottom) {
@@ -53,7 +62,9 @@ struct CreateEventView: View {
 
                         HStack(spacing: screenHeight * 0.014) {
                             GoldInputField(placeholder: "Buy In", text: $viewModel.buyIn, keyboardType: .decimalPad)
+                                .focused($focus, equals: .buyIn)
                             GoldInputField(placeholder: "Players", text: $viewModel.maxPlayers, keyboardType: .numberPad)
+                                .focused($focus, equals: .maxPlayers)
                         }
 
                         dressCodeSection
@@ -71,8 +82,18 @@ struct CreateEventView: View {
                     .padding(.top, screenHeight * 0.022)
                     .padding(.bottom, screenHeight * 0.06)
                 }
+                .scrollDismissesKeyboard(.interactively)
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") { focus = nil }
+                            .font(.poppinsSemiBold(size: screenHeight * 0.018))
+                            .foregroundStyle(Color("gold"))
+                    }
+                }
             }
         }
+        .hideKeyboardOnTap()
         .sheet(isPresented: $viewModel.showDatePicker) {
             datePicker(components: .date, minDate: Calendar.current.startOfDay(for: Date())) { date in
                 viewModel.eventDate = date
@@ -189,6 +210,7 @@ struct CreateEventView: View {
         HStack(spacing: screenHeight * 0.012) {
             GoldInputField(placeholder: "Prize Pool", text: $viewModel.prizePool,
                            keyboardType: .decimalPad, isError: viewModel.prizeError)
+                .focused($focus, equals: .prizePool)
                 .frame(maxWidth: .infinity)
                 .opacity(viewModel.isFree ? 0.4 : 1.0)
                 .disabled(viewModel.isFree)
@@ -294,6 +316,7 @@ struct CreateEventView: View {
                 .foregroundStyle(Color("gold"))
                 .tint(Color("gold"))
                 .scrollContentBackground(.hidden)
+                .focused($focus, equals: .description)
                 .padding(.horizontal, screenHeight * 0.012)
                 .padding(.vertical, screenHeight * 0.008)
         }

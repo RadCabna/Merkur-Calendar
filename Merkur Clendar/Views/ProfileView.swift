@@ -12,7 +12,10 @@ struct ProfileView: View {
     @State private var showCamera = false
     @State private var showCameraPermissionAlert = false
     @State private var cameraImage: UIImage? = nil
-    @State private var showEditProfile = false
+
+    @State private var isEditingName = false
+    @State private var editedName = ""
+    @FocusState private var nameFocused: Bool
 
     private var avatarSize: CGFloat { screenHeight * 0.115 }
     private var cornerRadius: CGFloat { screenHeight * 0.022 }
@@ -50,7 +53,10 @@ struct ProfileView: View {
                 .padding(.horizontal, screenHeight * 0.02)
                 .padding(.top, screenHeight * 0.015)
                 .padding(.bottom, screenHeight * 0.16)
+                .contentShape(Rectangle())
+                .onTapGesture { if isEditingName { commitName() } }
             }
+            .scrollDismissesKeyboard(.interactively)
         }
         .toolbar(.hidden, for: .navigationBar)
         .confirmationDialog("Choose photo source", isPresented: $showSourceMenu, titleVisibility: .visible) {
@@ -89,6 +95,15 @@ struct ProfileView: View {
         } message: {
             Text("Please allow camera access in Settings to take a photo.")
         }
+    }
+
+    private func commitName() {
+        let trimmed = editedName.trimmingCharacters(in: .whitespaces)
+        if !trimmed.isEmpty {
+            authVM.updateUsername(trimmed)
+        }
+        isEditingName = false
+        nameFocused = false
     }
 
     private func requestCameraAccess() {
@@ -163,14 +178,36 @@ struct ProfileView: View {
                     .frame(width: screenHeight * 0.022)
                     .foregroundStyle(Color("gold").opacity(0.8))
 
-                Text((authVM.currentUser?.username ?? "USER").uppercased())
-                    .font(.poppinsSemiBold(size: screenHeight * 0.02))
-                    .foregroundStyle(Color("gold"))
+                if isEditingName {
+                    TextField("", text: $editedName)
+                        .font(.poppinsSemiBold(size: screenHeight * 0.02))
+                        .foregroundStyle(Color("gold"))
+                        .tint(Color("gold"))
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .focused($nameFocused)
+                        .submitLabel(.done)
+                        .onSubmit { commitName() }
+                } else {
+                    Text((authVM.currentUser?.username ?? "USER").uppercased())
+                        .font(.poppinsSemiBold(size: screenHeight * 0.02))
+                        .foregroundStyle(Color("gold"))
+                }
 
                 Spacer()
 
-                Button { showEditProfile = true } label: {
-                    Image(systemName: "pencil")
+                Button {
+                    if isEditingName {
+                        commitName()
+                    } else {
+                        editedName = authVM.currentUser?.username ?? ""
+                        isEditingName = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            nameFocused = true
+                        }
+                    }
+                } label: {
+                    Image(systemName: isEditingName ? "checkmark" : "pencil")
                         .resizable()
                         .scaledToFit()
                         .frame(width: screenHeight * 0.018)
@@ -185,12 +222,6 @@ struct ProfileView: View {
             .background(Color(red: 0.04, green: 0.07, blue: 0.18))
             .clipShape(Capsule())
             .goldBorder(cornerRadius: screenHeight * 0.031, lineWidth: 2)
-            .sheet(isPresented: $showEditProfile) {
-                EditProfileSheet()
-                    .environment(authVM)
-                    .presentationDetents([.fraction(0.55)])
-                    .presentationBackground(Color(red: 0.04, green: 0.06, blue: 0.18))
-            }
 
             Spacer()
         }

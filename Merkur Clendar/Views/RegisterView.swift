@@ -21,6 +21,9 @@ struct RegisterView: View {
     @State private var usernameError = false
     @State private var passwordError = false
 
+    private enum Field: Hashable { case username, password, confirm }
+    @FocusState private var focus: Field?
+
     private var avatarSize: CGFloat { screenHeight * 0.13 }
 
     var body: some View {
@@ -28,6 +31,7 @@ struct RegisterView: View {
             Image("appBG")
                 .resizable()
                 .ignoresSafeArea()
+                .hideKeyboardOnTap()
 
             VStack(spacing: 0) {
                 header
@@ -41,12 +45,18 @@ struct RegisterView: View {
 
                     VStack(spacing: screenHeight * 0.018) {
                         authField(icon: "person.fill", placeholder: "USERNAME",
-                                  text: $username, isError: usernameError)
+                                  text: $username, isError: usernameError, field: .username)
+                            .submitLabel(.next)
+                            .onSubmit { focus = .password }
                         authField(icon: "lock.fill", placeholder: "PASSWORD",
-                                  text: $password, isSecure: true, isError: passwordError)
+                                  text: $password, isSecure: true, isError: passwordError, field: .password)
+                            .submitLabel(.next)
+                            .onSubmit { focus = .confirm }
                         authField(icon: "lock.fill", placeholder: "CONFIRM PASSWORD",
                                   text: $confirmPassword, isSecure: true,
-                                  isError: passwordMismatch)
+                                  isError: passwordMismatch, field: .confirm)
+                            .submitLabel(.done)
+                            .onSubmit { focus = nil }
 
                         if passwordMismatch {
                             Text("Passwords do not match")
@@ -63,6 +73,7 @@ struct RegisterView: View {
                 .padding(.horizontal, screenHeight * 0.025)
                 .padding(.bottom, screenHeight * 0.06)
             }
+                .scrollDismissesKeyboard(.interactively)
             }
         }
         .confirmationDialog("Choose photo source", isPresented: $showSourceMenu, titleVisibility: .visible) {
@@ -211,7 +222,7 @@ struct RegisterView: View {
 
     @ViewBuilder
     private func authField(icon: String, placeholder: String, text: Binding<String>,
-                           isSecure: Bool = false, isError: Bool = false) -> some View {
+                           isSecure: Bool = false, isError: Bool = false, field: Field) -> some View {
         HStack(spacing: screenHeight * 0.016) {
             Image(systemName: icon)
                 .resizable()
@@ -229,6 +240,7 @@ struct RegisterView: View {
                 .font(.poppinsSemiBold(size: screenHeight * 0.018))
                 .foregroundStyle(Color("gold"))
                 .tint(Color("gold"))
+                .focused($focus, equals: field)
             } else {
                 TextField("", text: text, prompt:
                     Text(placeholder)
@@ -240,6 +252,7 @@ struct RegisterView: View {
                 .tint(Color("gold"))
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
+                .focused($focus, equals: field)
             }
         }
         .frame(height: screenHeight * 0.065)

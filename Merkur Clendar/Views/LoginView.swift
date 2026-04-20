@@ -5,13 +5,16 @@ struct LoginView: View {
     @State private var username = ""
     @State private var password = ""
     @State private var showError = false
-    @State private var showRegister = false
+
+    private enum Field: Hashable { case username, password }
+    @FocusState private var focus: Field?
 
     var body: some View {
         ZStack {
             Image("appBG")
                 .resizable()
                 .ignoresSafeArea()
+                .hideKeyboardOnTap()
 
             VStack(spacing: 0) {
                 appHeader
@@ -21,8 +24,12 @@ struct LoginView: View {
                 Spacer()
 
                 VStack(spacing: screenHeight * 0.022) {
-                    authField(icon: "person.fill", placeholder: "USERNAME", text: $username)
-                    authField(icon: "lock.fill", placeholder: "PASSWORD", text: $password, isSecure: true)
+                    authField(icon: "person.fill", placeholder: "USERNAME", text: $username, field: .username)
+                        .submitLabel(.next)
+                        .onSubmit { focus = .password }
+                    authField(icon: "lock.fill", placeholder: "PASSWORD", text: $password, isSecure: true, field: .password)
+                        .submitLabel(.done)
+                        .onSubmit { attemptLogin() }
                 }
                 .padding(.horizontal, screenHeight * 0.025)
 
@@ -35,43 +42,23 @@ struct LoginView: View {
 
                 Spacer()
 
-                VStack(spacing: screenHeight * 0.018) {
-                    Button {
-                        if authVM.login(username: username, password: password) {
-                            showError = false
-                        } else {
-                            showError = true
-                        }
-                    } label: {
-                        Text("LOGIN")
-                            .font(.poppinsSemiBold(size: screenHeight * 0.026))
-                            .foregroundStyle(.black)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: screenHeight * 0.072)
-                            .background(Color("gold"))
-                            .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-
-                    Button {
-                        showRegister = true
-                    } label: {
-                        Text("SIGN UP")
-                            .font(.poppinsSemiBold(size: screenHeight * 0.018))
-                            .foregroundStyle(Color("gold"))
-                            .padding(.vertical, screenHeight * 0.01)
-                    }
-                    .buttonStyle(.plain)
+                Button {
+                    attemptLogin()
+                } label: {
+                    Text("LOGIN")
+                        .font(.poppinsSemiBold(size: screenHeight * 0.026))
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: screenHeight * 0.072)
+                        .background(Color("gold"))
+                        .clipShape(Capsule())
                 }
+                .buttonStyle(.plain)
                 .padding(.horizontal, screenHeight * 0.025)
                 .padding(.bottom, screenHeight * 0.08)
             }
         }
         .navigationBarHidden(true)
-        .fullScreenCover(isPresented: $showRegister) {
-            RegisterView()
-                .environment(authVM)
-        }
     }
 
     private var appHeader: some View {
@@ -91,8 +78,18 @@ struct LoginView: View {
         }
     }
 
+    private func attemptLogin() {
+        focus = nil
+        if authVM.login(username: username, password: password) {
+            showError = false
+        } else {
+            showError = true
+        }
+    }
+
     @ViewBuilder
-    private func authField(icon: String, placeholder: String, text: Binding<String>, isSecure: Bool = false) -> some View {
+    private func authField(icon: String, placeholder: String, text: Binding<String>,
+                           isSecure: Bool = false, field: Field) -> some View {
         HStack(spacing: screenHeight * 0.016) {
             Image(systemName: icon)
                 .resizable()
@@ -110,6 +107,7 @@ struct LoginView: View {
                 .font(.poppinsSemiBold(size: screenHeight * 0.018))
                 .foregroundStyle(Color("gold"))
                 .tint(Color("gold"))
+                .focused($focus, equals: field)
             } else {
                 TextField("", text: text, prompt:
                     Text(placeholder)
@@ -121,6 +119,7 @@ struct LoginView: View {
                 .tint(Color("gold"))
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
+                .focused($focus, equals: field)
             }
         }
         .frame(height: screenHeight * 0.065)
